@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.io.FileWriter;   // Import the FileWriter class
 import java.io.IOException;
 import java.net.UnknownHostException;
+import com.fazecast.jSerialComm.SerialPort;
 public class Actuator 
 {
     public static String MQTT_BROKER = "";
@@ -17,8 +18,13 @@ public class Actuator
     public static String messageNotify="";
     public static String adrress;
     public static boolean MqttInitialized = false;
+    public static SerialPort sp;
     public static void main(String[] args)  throws InterruptedException
     {
+        sp=SerialPort.getCommPort("COM8"); 
+        sp.setComPortParameters(9600, 8, 1, 0); // default connection settings for Arduino
+		sp.setComPortTimeouts(SerialPort.TIMEOUT_WRITE_BLOCKING, 0, 0);
+       
         if(args.length == 4){   //Ip Actuator tip id 
             try
             {
@@ -95,7 +101,7 @@ class ReadThreadActuator implements Runnable
             String message = SocketFunctions.recvData(group,port,socket);
             if(!message.equals("")){
             String[] lines=message.split("\n");
-            if(lines.length>=3){
+            if(lines.length==3 || lines.length==4){
             String hostIp = message.split("\n")[0].split(":")[1];
             String messageType = message.split("\n")[1].split(":")[1];
             String messageSender = message.split("\n")[2].split(":")[1];
@@ -189,10 +195,23 @@ class MqttHelperActuator{
             
             Actuator.client.subscribe(Topic,(topic,controllerMessage) -> {   //sub na topic
                 String mqttMessage = new String(controllerMessage.getPayload()); 
-                if(!Actuator.CurrData.equals(mqttMessage)){          //Ukoliko se dosadasnje stanje razlikuje od trenutnog pristiglog obavestava se korisnik
+                String []data=mqttMessage.split("\\|");
+                char[] ardMess = new char[data.length];
+                for (int i = 0; i < data.length; i++) {
+                    ardMess[i] = data[i].charAt(0);
+                }
+               // System.out.println(mqttMessage );
+                if(!Actuator.CurrData.equals(data[3])){          //Ukoliko se dosadasnje stanje razlikuje od trenutnog pristiglog obavestava se korisnik
                     System.out.print("Doslo je do promene stanja! \nTrenutno stanje:");
-                    System.out.println(mqttMessage);
-                    Actuator.CurrData=mqttMessage;
+                    System.out.println(data[3]);
+                    System.out.println();
+                    while(!Actuator.sp.openPort());
+                    Thread.sleep(2000);
+                    Actuator.sp.getOutputStream().write(new String(ardMess).getBytes());
+                    Actuator.sp.getOutputStream().flush();
+                    Thread.sleep(3000);
+                    Actuator.CurrData=data[3];
+                    Actuator.sp.closePort();
                 }
             }); 
         }

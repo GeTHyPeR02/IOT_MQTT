@@ -19,12 +19,16 @@ public class Sensor
     public static boolean MqttInitialized = false;
     public static void main(String[] args)  throws InterruptedException
     {
-        if(args.length == 5){   //IP sensor type_sensor id vrednost      
+        if(args.length == 4){   //IP sensor type_sensor id vrednost      
             //vrednost samo 0 ili 1 ! Da li ima opasnosti ili nema 
             try
             {
                String data="0|";
-               data = data  + SocketFunctions.getIndexDevice(deviceTypeSensor,args[2]) + "|"+args[3]+"|"+args[4];
+               data = data  + SocketFunctions.getIndexDevice(deviceTypeSensor,args[2]) + "|"+args[3]+"|";
+               Random random=new Random();
+               int rand=random.nextInt(2);
+               char a=(char)(rand+'0');
+               data+=a;
                 
                 MQTT_TOPIC="Automobil/Sensor/"+args[2]+"/"+args[3];  //primer Automobil/Sensor/Rain/1
                 System.out.println(MQTT_TOPIC);
@@ -116,7 +120,7 @@ class ReadThreadSensor implements Runnable
             String message = SocketFunctions.recvData(group,port,socket);
             if(!message.equals("")){
             String[] lines=message.split("\n");
-            if(lines.length>=3){
+            if(lines.length==3 || lines.length==4){
             String hostIp = message.split("\n")[0].split(":")[1];
             String messageType = message.split("\n")[1].split(":")[1];
             String messageSender = message.split("\n")[2].split(":")[1];

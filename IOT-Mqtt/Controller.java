@@ -59,7 +59,7 @@ public class Controller
                     //System.out.println(mqttMessage);
                   
                     String data[] = mqttMessage.split("\\|");
-                    MqttMessage actuatorMessage = new MqttMessage(data[3].getBytes());   //Salje se samo trenutno stanje 
+                    MqttMessage actuatorMessage = new MqttMessage(mqttMessage.getBytes());   //Salje se samo trenutno stanje 
                     actuatorMessage.setQos(1);
                     // Publish the message to all subscribed devices (actuators)
                         for (Device device : deviceList) {   //Prolazi kroz sve uredjaje, nalazi samo actuatore koji su subovani na taj tip senzora i salje poruku 
@@ -127,7 +127,7 @@ class ReadThreadServer implements Runnable
            
             if(!message.equals("")){
             String[] lines=message.split("\n");
-            if(lines.length>=3){
+            if(lines.length==3 || lines.length==4){
             String hostIp = message.split("\n")[0].split(":")[1];
             String messageType = message.split("\n")[1].split(":")[1];
             String deviceType = message.split("\n")[2].split(":")[1];
